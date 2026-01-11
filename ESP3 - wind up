@@ -1,0 +1,97 @@
+#include <Stepper.h>
+#include <WiFi.h>
+#include "esp_eap_client.h"
+#include <PubSubClient.h>
+#include <ArduinoJson.h>
+
+// ============= STEPPER =============
+const int stepsPerRevolution = 2038;
+Stepper myStepper = Stepper(stepsPerRevolution, 4, 17, 16, 18);
+
+// ============= WIFI - CHANGE THESE =============
+#define WIFI_SSID "SFUNET-SECURE"
+#define EAP_IDENTITY "yourname@sfu.ca"
+#define EAP_PASSWORD "yourpassword"
+
+// ============= MQTT =============
+const char* mqtt_server = "broker.hivemq.com";
+const int mqtt_port = 1883;
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+bool shouldRoll = false;
+
+void setwifi() {
+  Serial.println("Connecting to WiFi...");
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_STA);
+  esp_eap_client_set_identity((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY));
+  esp_eap_client_set_username((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY));
+  esp_eap_client_set_password((uint8_t *)EAP_PASSWORD, strlen(EAP_PASSWORD));
+  esp_wifi_sta_enterprise_enable();
+  WiFi.begin(WIFI_SSID);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi connected!");
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message: ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+  
+  StaticJsonDocument<200> doc;
+  deserializeJson(doc, payload, length);
+  const char* action = doc["action"] | "none";
+  
+  Serial.print("Action: ");
+  Serial.println(action);
+  
+  if (strcmp(action, "roll") == 0) {
+    shouldRoll = true;
+    Serial.println("Will roll!");
+  }
+}
+
+void reconnect() {
+  if (!client.connected()) {
+    Serial.print("MQTT connecting...");
+    String clientId = "ESP32-Motor-" + String(random(0xffff), HEX);
+    if (client.connect(clientId.c_str())) {
+      Serial.println("connected!");
+      client.subscribe("room/motor");
+      Serial.println("Subscribed to room/motor");
+    } else {
+      Serial.println("failed!");
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("\n=== ESP32 Cable Roller ===");
+  
+  myStepper.setSpeed(15);
+  setwifi();
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(callback);
+  
+  Serial.println("Ready!");
+}
+
+void loop() {
+  reconnect();
+  client.loop();
+  
+  if (shouldRoll) {
+    Serial.println("Rolling...");
+    myStepper.step(stepsPerRevolution * 5);
+    Serial.println("Done!");
+    shouldRoll = false;
+  }
+}
