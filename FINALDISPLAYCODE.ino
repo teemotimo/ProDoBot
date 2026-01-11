@@ -9,8 +9,8 @@
 
 // ============= WIFI - CHANGE THESE =============
 #define WIFI_SSID "SFUNET-SECURE"
-#define EAP_IDENTITY "tka132@sfu.ca"
-#define EAP_PASSWORD "fr3nchT0ast@417111"
+#define EAP_IDENTITY "id@sfu.ca"
+#define EAP_PASSWORD "password"
 
 // ============= MQTT - DON'T CHANGE =============
 const char* mqtt_server = "broker.hivemq.com";
