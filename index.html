@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prodobot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a638a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 650px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        #status {
+            text-align: center;
+            font-size: 18px;
+            color: #babed0;
+            margin-bottom: 20px;
+            min-height: 30px;
+            font-weight: 600;
+        }
+        
+        #transcript {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 60px;
+            margin-bottom: 25px;
+            font-size: 16px;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .transcript-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+        
+        #talkBtn {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: #3a5391;
+            color: white;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: block;
+            margin: 0 auto 25px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        #talkBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 120, 234, 0.6);
+        }
+        
+        #talkBtn:active {
+            transform: scale(0.95);
+        }
+        
+        #talkBtn.listening {
+            animation: pulse 1.5s infinite;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .presets {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .preset-btn {
+            padding: 12px 8px;
+            border: 2px solid #cfd2de;
+            background: white;
+            color: #9b9da6;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .preset-btn:hover {
+            background: #6680ea;
+            color: white;
+        }
+        
+        .device-status {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .device {
+            text-align: center;
+            padding: 15px 10px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .device.active {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+        }
+        
+        .device-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .device-name {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        
+        .device-value {
+            font-size: 13px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        /* Emotion face display */
+        .emotion-face {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        /* Timer display */
+        .timer-display {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #667eea;
+        }
+
+        /* Response display */
+        #response {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 10px;
+            display: none;
+            font-size: 14px;
+            color: #2e437d;
+        }
+        
+        #response.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        #response.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👾 ProDoBot</h1>
+        <p class="subtitle">Control your room with your voice</p>
+        
+        <div id="status">Ready to listen...</div>
+        
+        <div>
+            <div class="transcript-label">You said:</div>
+            <div id="transcript">Press the button and speak...</div>
+        </div>
+        
+        <button id="talkBtn">PUSH TO TALK</button>
+        
+        <div class="presets">
+            <button class="preset-btn" onclick="sendPreset('morning mode')">🌅 Morning</button>
+            <button class="preset-btn" onclick="sendPreset('study mode')">📚 Study</button>
+            <button class="preset-btn" onclick="sendPreset('party mode')">🎉 Party</button>
+            <button class="preset-btn" onclick="sendPreset('sleep mode')">😴 Sleep</button>
+            <button class="preset-btn" onclick="sendPreset('turn everything off')">🔴 All Off</button>
+            <button class="preset-btn" onclick="sendPreset('set a 25 minute timer')">⏱️ 25min</button>
+        </div>
+        
+        <div class="device-status">
+            <div class="device" id="lightDevice">
+                <div class="device-icon">💡</div>
+                <div class="device-name">Lights</div>
+                <div class="device-value" id="lightStatus">OFF</div>
+            </div>
+            <div class="device" id="motorDevice">
+                <div class="device-icon">🔋</div>
+                <div class="device-name">Cable Winder</div>
+                <div class="device-value" id="motorStatus">CLOSED</div>
+            </div>
+            <div class="device" id="displayDevice">
+                <div class="emotion-face" id="emotionFace">😐</div>
+                <div class="device-name">Display</div>
+                <div class="device-value" id="displayStatus">neutral</div>
+            </div>
+            <div class="device" id="timerDevice">
+                <div class="device-icon">⏱️</div>
+                <div class="device-name">Timer</div>
+                <div class="timer-display" id="timerStatus">--:--</div>
+            </div>
+        </div>
+        
+        <div id="response"></div>
+    </div>
+    
+    <script>
+        // Check browser support
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            alert('Speech recognition not supported in this browser. Please use Chrome.');
+        }
+        
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        
+        const btn = document.getElementById('talkBtn');
+        const status = document.getElementById('status');
+        const transcript = document.getElementById('transcript');
+        const responseDiv = document.getElementById('response');
+        
+        // Emotion to emoji mapping
+        const emotionEmojis = {
+            'happy': '😊',
+            'sad': '😢',
+            'angry': '😠',
+            'surprised': '😲',
+            'neutral': '😐',
+            'sleepy': '😴',
+            'excited': '🤩'
+        };
+        
+        // Timer state
+        let timerInterval = null;
+        let timerSeconds = 0;
+        
+        // Voice button handler
+        btn.addEventListener('mousedown', () => {
+            try {
+                recognition.start();
+                status.textContent = '🎤 Listening...';
+                btn.classList.add('listening');
+                btn.textContent = 'LISTENING...';
+            } catch (e) {
+                console.log('Recognition already started');
+            }
+        });
+        
+        recognition.onresult = async (event) => {
+            const text = event.results[0][0].transcript;
+            transcript.textContent = text;
+            await processCommand(text);
+        };
+        
+        recognition.onend = () => {
+            btn.classList.remove('listening');
+            btn.textContent = 'PUSH TO TALK';
+        };
+        
+        recognition.onerror = (event) => {
+            status.textContent = '❌ Error - try again';
+            btn.classList.remove('listening');
+            btn.textContent = 'PUSH TO TALK';
+            console.error('Speech recognition error:', event.error);
+        };
+        
+        // Process voice command
+        async function processCommand(command) {
+            status.textContent = '🤔 Processing...';
+            responseDiv.classList.remove('show', 'error');
+            
+            try {
+                const response = await fetch('http://localhost:5001/voice-command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ command: command })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    status.textContent = '✅ Command executed!';
+                    updateDeviceStatus(result.commands);
+                    showResponse('Commands sent: ' + result.commands.map(c => c.device).join(', '));
+                } else {
+                    status.textContent = '❌ Command failed';
+                    showResponse(result.error || 'Unknown error', true);
+                }
+                
+                setTimeout(() => {
+                    status.textContent = 'Ready to listen...';
+                }, 2500);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                status.textContent = '❌ Server error';
+                showResponse('Could not connect to server. Is it running?', true);
+                setTimeout(() => {
+                    status.textContent = 'Ready to listen...';
+                }, 2500);
+            }
+        }
+        
+        // Show response message
+        function showResponse(message, isError = false) {
+            responseDiv.textContent = message;
+            responseDiv.classList.add('show');
+            if (isError) {
+                responseDiv.classList.add('error');
+            }
+            setTimeout(() => {
+                responseDiv.classList.remove('show', 'error');
+            }, 4000);
+        }
+        
+        // Preset button handler
+        async function sendPreset(command) {
+            transcript.textContent = command;
+            await processCommand(command);
+        }
+        
+        // Update device status display
+        function updateDeviceStatus(commands) {
+            commands.forEach(cmd => {
+                // Lighting
+                if (cmd.device === 'lighting') {
+                    const lightDevice = document.getElementById('lightDevice');
+                    const lightStatus = document.getElementById('lightStatus');
+                    
+                    if (cmd.state === 'on') {
+                        lightDevice.classList.add('active');
+                        const brightness = cmd.brightness || 100;
+                        const color = cmd.color || 'warm';
+                        lightStatus.textContent = `${brightness}% ${color}`;
+                    } else {
+                        lightDevice.classList.remove('active');
+                        lightStatus.textContent = 'OFF';
+                    }
+                }
+                
+                // Motor (blinds)
+                if (cmd.device === 'motor') {
+                    const motorDevice = document.getElementById('motorDevice');
+                    const motorStatus = document.getElementById('motorStatus');
+                    const position = cmd.position || 0;
+                    
+                    if (position > 0) {
+                        motorDevice.classList.add('active');
+                        motorStatus.textContent = `${position}% OPEN`;
+                    } else {
+                        motorDevice.classList.remove('active');
+                        motorStatus.textContent = 'CLOSED';
+                    }
+                }
+                
+                // Display (emotion face)
+                if (cmd.device === 'display') {
+                    const displayDevice = document.getElementById('displayDevice');
+                    const emotionFace = document.getElementById('emotionFace');
+                    const displayStatus = document.getElementById('displayStatus');
+                    const emotion = cmd.emotion || 'neutral';
+                    
+                    displayDevice.classList.add('active');
+                    emotionFace.textContent = emotionEmojis[emotion] || '😐';
+                    displayStatus.textContent = emotion;
+                }
+                
+                // Timer
+                if (cmd.device === 'timer') {
+                    const timerDevice = document.getElementById('timerDevice');
+                    const timerStatusEl = document.getElementById('timerStatus');
+                    
+                    if (cmd.action === 'start' && cmd.duration) {
+                        // Clear existing timer
+                        if (timerInterval) {
+                            clearInterval(timerInterval);
+                        }
+                        
+                        timerSeconds = cmd.duration;
+                        timerDevice.classList.add('active');
+                        updateTimerDisplay();
+                        
+                        // Start countdown
+                        timerInterval = setInterval(() => {
+                            timerSeconds--;
+                            updateTimerDisplay();
+                            
+                            if (timerSeconds <= 0) {
+                                clearInterval(timerInterval);
+                                timerDevice.classList.remove('active');
+                                timerStatusEl.textContent = "DONE!";
+                                // Play sound or notification
+                                if (Notification.permission === 'granted') {
+                                    new Notification('Timer Complete!', { body: cmd.name || 'Your timer is done!' });
+                                }
+                            }
+                        }, 1000);
+                        
+                    } else if (cmd.action === 'stop') {
+                        if (timerInterval) {
+                            clearInterval(timerInterval);
+                        }
+                        timerDevice.classList.remove('active');
+                        timerStatusEl.textContent = '--:--';
+                    } else if (cmd.action === 'pause') {
+                        if (timerInterval) {
+                            clearInterval(timerInterval);
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update timer display
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timerSeconds / 60);
+            const seconds = timerSeconds % 60;
+            document.getElementById('timerStatus').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Request notification permission on load
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>
